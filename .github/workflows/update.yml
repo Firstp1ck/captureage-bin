@@ -51,6 +51,7 @@ jobs:
             captureage
             configure_game.py
             captureage.desktop
+            captureage.png
             captureage.reg
             LICENSE
             README.md
