@@ -1,0 +1,35 @@
+name: Automation health
+
+on:
+  schedule:
+    - cron: '47 4 * * *'
+  workflow_dispatch:
+  workflow_run:
+    workflows: ['Update and publish CaptureAge']
+    types: [completed]
+    branches: [main]
+
+permissions:
+  actions: read
+  contents: write
+  issues: write
+
+concurrency:
+  group: automation-health
+  cancel-in-progress: false
+
+jobs:
+  monitor:
+    # A fork's pull-request build is not evidence about the published package.
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.event != 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          ref: main
+          persist-credentials: false
+      - name: Check update freshness and publishing
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 tools/health.py --publish

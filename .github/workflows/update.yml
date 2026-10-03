@@ -23,6 +23,9 @@ jobs:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
           persist-credentials: false
+      - name: Check upstream CaptureAge version
+        if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+        run: python3 tools/update.py --check
       - name: Update and build in Arch Linux
         env:
           UPDATE_UPSTREAM: ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
