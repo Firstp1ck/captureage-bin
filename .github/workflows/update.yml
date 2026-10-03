@@ -49,6 +49,7 @@ jobs:
             PKGBUILD
             .SRCINFO
             captureage
+            configure_game.py
             captureage.desktop
             captureage.reg
             LICENSE

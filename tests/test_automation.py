@@ -1,6 +1,7 @@
 import hashlib
 import io
 import json
+import re
 import shutil
 import subprocess
 import sys
@@ -62,7 +63,7 @@ class UpdaterTests(unittest.TestCase):
     @unittest.skipUnless(shutil.which('makepkg'), 'makepkg is needed to generate .SRCINFO')
     def test_new_release_refreshes_version_release_and_all_checksums(self):
         recipe = self.root / 'PKGBUILD'
-        recipe.write_text(recipe.read_text().replace('pkgrel=1', 'pkgrel=7'))
+        recipe.write_text(re.sub(r'^pkgrel=[0-9]+$', 'pkgrel=7', recipe.read_text(), flags=re.M))
         payload = b'test archive payload'
         digest = hashlib.sha256(payload).hexdigest()
         def fetch(version, destination):

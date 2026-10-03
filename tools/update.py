@@ -13,7 +13,7 @@ from urllib.parse import unquote, urlparse
 from urllib.request import HTTPRedirectHandler, Request, build_opener
 
 ROOT = Path(__file__).resolve().parents[1]
-LOCAL_SOURCES = ('captureage', 'captureage.desktop', 'captureage.reg', 'LICENSE', 'README.md')
+LOCAL_SOURCES = ('captureage', 'configure_game.py', 'captureage.desktop', 'captureage.reg', 'LICENSE', 'README.md')
 PACKAGE_FILES = ('PKGBUILD', '.SRCINFO', *LOCAL_SOURCES)
 LATEST = 'https://captureage.com/api/cade/download/prod/latest'
 MAX_ARCHIVE = 1024 * 1024 * 1024
