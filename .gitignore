@@ -1,0 +1,11 @@
+/src/
+/pkg/
+/*.pkg.tar.*
+/*.src.tar.*
+/CaptureAge-*.nsis.7z
+__pycache__/
+*.py[cod]
+.env
+.env.*
+*.pem
+*.key

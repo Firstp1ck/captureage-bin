@@ -1,0 +1,109 @@
+name: Update and publish CaptureAge
+
+on:
+  schedule:
+    - cron: '17 3 * * *'
+  workflow_dispatch:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: captureage-${{ github.event.pull_request.number || 'publish' }}
+  cancel-in-progress: false
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - name: Update and build in Arch Linux
+        env:
+          UPDATE_UPSTREAM: ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
+        run: |
+          docker run --rm \
+            --env UPDATE_UPSTREAM --env BUILDER_UID="$(id -u)" \
+            --volume "$PWD:/work" --workdir /work \
+            archlinux:base-devel bash -euc '
+              pacman -Syu --noconfirm git python libarchive shellcheck desktop-file-utils namcap
+              useradd --uid "$BUILDER_UID" --create-home builder
+              if [[ "$UPDATE_UPSTREAM" == true ]]; then
+                runuser -u builder -- python tools/update.py
+              fi
+              runuser -u builder -- bash tools/validate.sh
+            '
+      - name: Save validated package sources
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: package-sources
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 1
+          path: |
+            PKGBUILD
+            .SRCINFO
+            captureage
+            captureage.desktop
+            captureage.reg
+            LICENSE
+            README.md
+
+  publish:
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    needs: validate
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5
+        with:
+          name: package-sources
+          path: .
+      - name: Commit updated package to GitHub
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add PKGBUILD .SRCINFO README.md
+          if ! git diff --cached --quiet; then
+            version=$(sed -n 's/^pkgver=//p' PKGBUILD)
+            git commit -m "Update CaptureAge to $version"
+            gh auth setup-git
+            git push origin HEAD:main
+          fi
+          remote_head=$(gh api "repos/$GITHUB_REPOSITORY/git/ref/heads/main" --jq .object.sha)
+          test "$remote_head" = "$(git rev-parse HEAD)" || {
+            echo 'GitHub main changed during validation; retry publishing from the latest commit.'
+            exit 1
+          }
+      - name: Set up AUR SSH credentials
+        env:
+          AUR_SSH_PRIVATE_KEY: ${{ secrets.AUR_SSH_PRIVATE_KEY }}
+          AUR_KNOWN_HOSTS: ${{ secrets.AUR_KNOWN_HOSTS }}
+        run: |
+          test -n "$AUR_SSH_PRIVATE_KEY" || { echo 'Missing AUR_SSH_PRIVATE_KEY secret'; exit 1; }
+          test -n "$AUR_KNOWN_HOSTS" || { echo 'Missing AUR_KNOWN_HOSTS secret'; exit 1; }
+          install -d -m700 "$HOME/.ssh"
+          printf '%s\n' "$AUR_SSH_PRIVATE_KEY" > "$HOME/.ssh/aur"
+          printf '%s\n' "$AUR_KNOWN_HOSTS" > "$HOME/.ssh/known_hosts"
+          chmod 600 "$HOME/.ssh/aur" "$HOME/.ssh/known_hosts"
+      - name: Publish package sources to AUR
+        env:
+          GIT_SSH_COMMAND: ssh -i /home/runner/.ssh/aur -o IdentitiesOnly=yes -o BatchMode=yes -o StrictHostKeyChecking=yes
+          AUR_COMMIT_NAME: Firstpick
+          AUR_COMMIT_EMAIL: firstpick1992@proton.me
+        run: python3 tools/publish_aur.py
+      - name: Remove AUR private key
+        if: always()
+        run: rm -f "$HOME/.ssh/aur"
