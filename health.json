@@ -1,13 +1,13 @@
 {
   "repository": "Firstp1ck/captureage-bin",
-  "checked_at": "2026-11-16T13:08:59Z",
+  "checked_at": "2026-11-17T11:51:25Z",
   "status": "healthy",
   "stale_after_hours": 48,
   "workflow_state": "active",
-  "last_successful_upstream_check": "2026-11-16T11:14:59Z",
-  "upstream_check_run_url": "https://github.com/Firstp1ck/captureage-bin/actions/runs/43856050618",
-  "latest_completed_run_url": "https://github.com/Firstp1ck/captureage-bin/actions/runs/43856050618",
-  "last_successful_publish": "2026-11-16T11:16:04Z",
-  "last_successful_publish_run_url": "https://github.com/Firstp1ck/captureage-bin/actions/runs/43856050618",
+  "last_successful_upstream_check": "2026-11-17T11:50:18Z",
+  "upstream_check_run_url": "https://github.com/Firstp1ck/captureage-bin/actions/runs/44077574449",
+  "latest_completed_run_url": "https://github.com/Firstp1ck/captureage-bin/actions/runs/44077574449",
+  "last_successful_publish": "2026-11-17T11:51:10Z",
+  "last_successful_publish_run_url": "https://github.com/Firstp1ck/captureage-bin/actions/runs/44077574449",
   "reasons": []
 }
